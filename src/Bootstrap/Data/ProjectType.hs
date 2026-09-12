@@ -91,7 +91,7 @@ projectSuperTypeName = \case
   PSTNode -> "NodeJS"
   PSTGo -> "Go"
   PSTJava -> "Java"
-  PSTPython -> "Python 3.9"
+  PSTPython -> "Python"
   PSTRust -> "Rust"
 
 class HasProjectSuperType a where
@@ -318,7 +318,7 @@ data PythonVersion = Python39
 
 pythonVersionName :: PythonVersion -> Text
 pythonVersionName = \case
-  Python39 -> "Python 3.9"
+  Python39 -> "Python from nixpkgs"
 
 projectTypeCodec :: TomlCodec ProjectTypeV2
 projectTypeCodec =

@@ -200,18 +200,19 @@ instance Bootstrappable Readme where
                  [ "",
                    "## Adding Python Dependencies",
                    "",
-                   "To add python dependencies to the project add them to the 'requirements.txt', in the same format seen in Pip projects.",
-                   "",
-                   "Then run `direnv reload` to reload the shell and install the dependencies in `requirements.txt`.",
+                   "Add Python dependencies to `nix/python-packages.nix` using their nixpkgs Python package attribute names.",
                    "",
                    "For example:",
                    "",
-                   "   ```python",
-                   "   numpy",
-                   "   pandas==1.4.2",
+                   "   ```nix",
+                   "   {pythonPackages}:",
+                   "   with pythonPackages; [",
+                   "     numpy",
+                   "     pandas",
+                   "   ]",
                    "   ```",
                    "",
-                   "Note that the `requirements.txt` file has to be tracked by git in order to add dependencies. This can be done by running `git add -N requirements.txt` in this projects root directory"
+                   "Run `direnv reload` after changing the package list to rebuild the development environment."
                  ]
                _ -> []
            )

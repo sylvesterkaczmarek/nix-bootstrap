@@ -45,7 +45,7 @@ import Bootstrap.Data.Bootstrappable.Haskell.PreludeHs (preludeHsFor)
 import Bootstrap.Data.Bootstrappable.Haskell.ServerHs (serverHsFor)
 import Bootstrap.Data.Bootstrappable.HaskellPackagesNix (haskellPackagesNixFor)
 import Bootstrap.Data.Bootstrappable.NixPreCommitHookConfig (nixPreCommitHookConfigFor)
-import Bootstrap.Data.Bootstrappable.Python.Requirements (Requirements (Requirements))
+import Bootstrap.Data.Bootstrappable.Python.PythonPackagesNix (pythonPackagesNixFor)
 import Bootstrap.Data.Bootstrappable.Readme
   ( Readme
       ( Readme,
@@ -98,7 +98,6 @@ import Bootstrap.Data.ProjectType
     ElmMode (ElmModeBare, ElmModeNode),
     ElmModeSimple (ElmModeSimpleBare, ElmModeSimpleNode),
     ElmOptions (ElmOptions, elmOptionElmMode, elmOptionProvideElmReview),
-    HasProjectSuperType (projectSuperType),
     HaskellOptions (HaskellOptions),
     InstallLombok (InstallLombok),
     InstallMinishift (InstallMinishift),
@@ -150,7 +149,7 @@ import Paths_nix_bootstrap (version)
 import Relude.Extra.Map (alter, toPairs)
 import qualified Relude.Extra.Map as M
 import qualified Relude.Unsafe as Unsafe
-import System.Directory (doesFileExist, doesPathExist, getCurrentDirectory, removeFile)
+import System.Directory (doesPathExist, getCurrentDirectory, removeFile)
 import System.FilePath (takeFileName)
 import System.Terminal
   ( MonadColorPrinter (blue, foreground, green, yellow),
@@ -425,15 +424,8 @@ data MakeBuildPlanArgs = MakeBuildPlanArgs
     mbpRunConfig :: RunConfig
   }
 
-makeBuildPlan :: (MonadBootstrap m) => MakeBuildPlanArgs -> m BuildPlan
-makeBuildPlan mbp = case projectSuperType $ mbpProjectType mbp of
-  PSTPython -> do
-    putErrorLn "nix-bootstrap no longer supports Python. Please see https://github.com/gchq/nix-bootstrap/issues/6 for details."
-    exitFailure
-  _ -> makeNonPythonBuildPlan mbp
-
-makeNonPythonBuildPlan :: forall m. (MonadBootstrap m) => MakeBuildPlanArgs -> m BuildPlan
-makeNonPythonBuildPlan MakeBuildPlanArgs {..} = do
+makeBuildPlan :: forall m. (MonadBootstrap m) => MakeBuildPlanArgs -> m BuildPlan
+makeBuildPlan MakeBuildPlanArgs {..} = do
   initialBuildPlanMap <- mkInitialBuildPlanMap
   readme <- readmeWithBuildPlan . BuildPlan $ toPairs initialBuildPlanMap
   pure . BuildPlan . toPairs $ alter (const $ pure readme) (bootstrapName initialReadme) initialBuildPlanMap
@@ -458,11 +450,6 @@ makeNonPythonBuildPlan MakeBuildPlanArgs {..} = do
           Go (SetUpGoBuild True) ->
             Just <$> goModfileFor mbpNixBinaryPaths mbpProjectName
           _ -> pure Nothing
-      pythonRequirementsFile <- case mbpProjectType of
-        Python _ -> do
-          requirementsExist <- liftIO $ doesFileExist (bootstrapName Requirements)
-          if requirementsExist then pure Nothing else pure $ Just Requirements
-        _ -> pure Nothing
       fromList
         <$> toBuildPlanFiles
           ( configFor
@@ -486,7 +473,7 @@ makeNonPythonBuildPlan MakeBuildPlanArgs {..} = do
               ~: vsCodeExtensionsFileFor mbpProjectType
               ~: vsCodeSettingsFor mbpDevContainerConfig
               ~: goModfile
-              ~: pythonRequirementsFile
+              ~: pythonPackagesNixFor mbpProjectType
               ~: mainElmFor mbpProjectType
               ~: elmJsonFor mbpProjectType
               ~: elmReviewElmJsonFor mbpProjectType

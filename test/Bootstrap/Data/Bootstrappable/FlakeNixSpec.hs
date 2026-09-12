@@ -271,11 +271,9 @@ spec = describe "flake.nix rendering" do
   description = "Development infrastructure for test-project";
   inputs = {
     nixpkgs-src.url = "nixpkgs/26.05";
-    mach-nix.url = "github:DavHau/mach-nix?ref=3.5.0";
   };
   outputs = {
     nixpkgs-src,
-    mach-nix,
     self,
     ...
   }: let
@@ -285,10 +283,10 @@ spec = describe "flake.nix rendering" do
   in
     systemsHelpers.forEachSystem supportedSystems (system: let
       nixpkgs = nixpkgs-src.legacyPackages.${system};
-      pythonPackages = mach-nix.lib.${system}.mkPython rec {
-        requirements = builtins.readFile ./requirements.txt;
-        python = "python39";
-      };
+      pythonPackages = nixpkgs.python3.withPackages (pythonPackages:
+        import ./nix/python-packages.nix {
+          inherit pythonPackages;
+        });
     in {
       devShell = self.devShells.${system}.default;
       devShells.default = nixpkgs.mkShell {

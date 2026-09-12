@@ -68,7 +68,7 @@ import Bootstrap.Nix.Expr.MkShell
     mkShell,
   )
 import Bootstrap.Nix.Expr.PreCommitHooks (ImportPreCommitHooksArgs (ImportPreCommitHooksArgs, passNixpkgsThrough, passSystemThrough), importPreCommitHooks)
-import Bootstrap.Nix.Expr.Python (machNixFlakeInput, pythonPackagesBinding)
+import Bootstrap.Nix.Expr.Python (pythonPackagesBinding)
 import Bootstrap.Nix.Expr.ReproducibleBuild (ReproducibleBuildExpr (rbeRequirements), ReproducibleBuildRequirement (RBRHaskellPackages, RBRNixpkgs), reproducibleBuildRequirementIdentifier, sortRbeRequirements)
 
 data FlakeNix = FlakeNix
@@ -211,8 +211,6 @@ instance IsNixExpr FlakeNix where
   toNixExpr FlakeNix {..} =
     let usingHooks :: Bool
         usingHooks = unPreCommitHooksConfig flakeNixPreCommitHooksConfig
-        isPython :: Bool
-        isPython = case flakeNixProjectType of Python _ -> True; _ -> False
      in ESet
           False
           [ [nixproperty|description|]
@@ -227,13 +225,11 @@ instance IsNixExpr FlakeNix where
                     : [ [nixbinding|pre-commit-hooks-lib.url = "github:cachix/pre-commit-hooks.nix";|]
                       | usingHooks
                       ]
-                      <> [machNixFlakeInput | isPython]
                 ),
             [nixproperty|outputs|]
               |= FASet
                 ( [nixident|nixpkgs-src|]
-                    :| ( [[nixident|mach-nix|] | isPython]
-                           <> [[nixident|pre-commit-hooks-lib|] | usingHooks]
+                    :| ( [[nixident|pre-commit-hooks-lib|] | usingHooks]
                            <> [[nixident|self|]]
                            <> [[nixident|...|]]
                        )
